@@ -14,7 +14,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
-    origin: [/^https?:\/\/localhost:\d+$/, /^https?:\/\/127\.0\.0\.1:\d+$/],
+    origin: [
+        /^https?:\/\/localhost:\d+$/,
+        /^https?:\/\/127\.0\.0\.1:\d+$/,
+        /^https?:\/\/192\.168\.56\.1:\d+$/
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
