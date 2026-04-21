@@ -11,7 +11,7 @@ const router = Router();
 // =======================
 // SUBMIT QUIZ ATTEMPT
 // =======================
-router.post('/', authenticateToken, [
+router.post('/submit', authenticateToken, [
   body('quizId').notEmpty(),
   body('answers').isArray(),
   body('answers.*.questionId').notEmpty(),
@@ -120,16 +120,21 @@ router.get('/', authenticateToken, async (req, res) => {
 // =======================
 router.get('/quiz/:quizCode/leaderboard', authenticateToken, async (req, res) => {
   try {
-    const quiz = await Quiz.findOne({
-      quizCode: req.params.quizCode.toUpperCase(),
-    });
+      const quiz = await Quiz.findOne({
+        quizCode: req.params.quizCode.toUpperCase()
+        });
 
-    if (!quiz) {
-      return res.status(404).json({ error: 'Quiz not found' });
-    }
+       if(!quiz){
+       return res.status(404).json({
+       error:"Quiz not found"
+       });
+       }
 
-    const attempts = await Attempt.find({ quizId: quiz._id })
-      .populate('userId', 'name email') // ✅ IMPORTANT
+       const attempts =
+       await Attempt.find({
+       quizId: quiz._id
+      })
+      .populate('userId', 'name email')
       .sort({ score: -1, completedAt: -1 });
 
     const leaderboard = new Map();
@@ -140,7 +145,7 @@ router.get('/quiz/:quizCode/leaderboard', authenticateToken, async (req, res) =>
       if (!leaderboard.has(userId)) {
         leaderboard.set(userId, {
           userId,
-          name: attempt.userId.name || "Anonymous", // ✅ FIXED
+          name: attempt.userId.name || "Anonymous", 
           score: attempt.score,
           totalQuestions: attempt.totalQuestions,
           percentage: Math.round(
@@ -161,6 +166,96 @@ router.get('/quiz/:quizCode/leaderboard', authenticateToken, async (req, res) =>
     console.error('Get leaderboard error:', error);
     res.status(500).json({ error: 'Failed to get leaderboard' });
   }
+});
+
+router.get('/leaderboard/global',
+    authenticateToken,
+    async(req,res)=>{
+
+    try{
+
+    const rankings =
+    await Attempt.aggregate([
+
+    {
+    $group:{
+
+    _id:"$userId",
+
+    totalCorrect:{
+    $sum:"$score"
+    },
+
+    totalQuestions:{
+    $sum:"$totalQuestions"
+    },
+
+    quizzesAttempted:{
+    $sum:1
+    }
+
+    }
+    },
+
+    {
+    $lookup:{
+    from:"users",
+    localField:"_id",
+    foreignField:"_id",
+    as:"user"
+    }
+    },
+    {
+    $unwind:"$user"
+    },
+
+    {
+    $project:{
+
+    userId:"$_id",
+
+    name:"$user.name",
+
+    averagePercentage:{
+    $multiply:[
+    {
+    $divide:[
+    "$totalCorrect",
+    "$totalQuestions"
+    ]
+    },
+    100
+    ]
+    },
+
+    quizzesAttempted:1
+
+    }
+    },
+    {
+    $sort:{
+    averagePercentage:-1
+    }
+    }
+
+    ]);
+
+    res.json({
+    leaderboard:rankings
+    });
+
+    }
+
+    catch(error){
+
+    console.error(error);
+
+    res.status(500).json({
+    error:"Failed to get global leaderboard"
+    });
+
+    }
+
 });
 
 

@@ -58,30 +58,26 @@ function DashboardPage() {
         setAttempts(allAttempts);
         setMyQuizzes(quizzesRes?.quizzes || []);
 
-        // ✅ Use backend leaderboard instead of local calculation
-      // ✅ ALWAYS use attempts (works for ALL users)
-      const firstAttemptQuiz = allAttempts[0]?.quiz?.quizCode;
+        const leaderboardRes = await apiClient.getGlobalLeaderboard();
+        console.log(leaderboardRes);
 
-      if (firstAttemptQuiz) {
-        const leaderboardRes = await apiClient.getLeaderboard(firstAttemptQuiz);
         const leaderboardData = leaderboardRes?.leaderboard || [];
 
         setLeaderboard(
           leaderboardData.slice(0, 5).map((entry, index) => ({
             rank: index + 1,
             name: entry.name || "Anonymous",
-            score: entry.percentage,
+            score: Math.round(entry.averagePercentage),
           }))
         );
 
         const myEntry = leaderboardData.find(
-          (entry) => entry.userId === user.id
+          (entry) => String(entry.userId) === String(user.id)
         );
 
         setUserRank(
           myEntry ? leaderboardData.indexOf(myEntry) + 1 : null
         );
-      }
       } catch (error) {
         console.error("Error loading dashboard data:", error);
       } finally {

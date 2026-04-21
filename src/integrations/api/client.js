@@ -101,6 +101,13 @@ class APIClient {
     return this.request("GET", `/attempts/quiz/${quizCode}/leaderboard`);
   }
 
+  async getGlobalLeaderboard() {
+  return this.request(
+    "GET",
+    "/attempts/leaderboard/global"
+    );
+  }
+
   async getAttempts() {
     return this.request("GET", "/attempts");
   }
@@ -139,7 +146,7 @@ class APIClient {
     });
   }
 
-  // ✅ FIXED: update quiz (activate/deactivate)
+  // FIXED: update quiz (activate/deactivate)
   async updateQuiz(id, updates) {
     return this.request("PUT", `/quizzes/${id}`, updates);
   }

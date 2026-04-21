@@ -50,7 +50,27 @@ function QuizAttemptPage() {
         console.log("✅ Questions Data received:", JSON.stringify(questionsData, null, 2));
 
         setQuiz(quizData.quiz);
-        setTimeLeft(quizData.quiz.timeLimit * 60);
+        const storedEndTime = localStorage.getItem(`quiz_end_${quizId}`);
+
+        if (storedEndTime) {
+
+          const remaining =
+            Math.floor((parseInt(storedEndTime) - Date.now()) / 1000);
+
+          setTimeLeft(Math.max(remaining,0));
+
+        } else {
+
+          const endTime =
+            Date.now() + (quizData.quiz.timeLimit * 60 * 1000);
+
+          localStorage.setItem(
+            `quiz_end_${quizId}`,
+            endTime.toString()
+          );
+
+          setTimeLeft(quizData.quiz.timeLimit * 60);
+        }
 
         // Set questions safely
         const questionsList = questionsData?.questions || questionsData || [];
