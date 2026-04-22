@@ -225,6 +225,7 @@ function QuizAttemptPage() {
     );
   }
 
+  
   const currentQ = questions[currentIdx];
 
   return (

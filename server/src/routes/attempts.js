@@ -11,11 +11,11 @@ const router = Router();
 // =======================
 // SUBMIT QUIZ ATTEMPT
 // =======================
-router.post('/submit', authenticateToken, [
+router.post(['/', '/submit'], authenticateToken, [
   body('quizId').notEmpty(),
   body('answers').isArray(),
   body('answers.*.questionId').notEmpty(),
-  body('answers.*.selectedAnswer').isInt({ min: 0 }),
+  body('answers.*.selectedAnswer').isInt({ min: -1 }),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);

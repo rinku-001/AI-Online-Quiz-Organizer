@@ -11,6 +11,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
+import { Slider } from "../components/ui/slider";
 import {
   Card,
   CardContent,
@@ -57,6 +58,7 @@ function CreateQuizPage() {
   const [loading, setLoading] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiQuestionCount, setAiQuestionCount] = useState(50);
 
   const addQuestion = () => {
     setQuestions([
@@ -91,14 +93,22 @@ function CreateQuizPage() {
         aiPrompt,
         "",        // don't send topic separately, let the prompt drive it
         difficulty,
-        5
+        aiQuestionCount
       );
 
       if (data?.questions) {
         const mapped = data.questions.map((q) => ({
-          question_text: q.question,
-          options: q.options,
-          correct_answer: q.correctAnswer ?? 0,
+          question_text: (q.question || "").trim(),
+          options: (() => {
+            const raw = Array.isArray(q.options) ? q.options : [];
+            const normalized = raw.slice(0, 4).map((opt) => String(opt || "").trim());
+            while (normalized.length < 4) normalized.push("");
+            return normalized;
+          })(),
+          correct_answer: (() => {
+            const parsed = Number(q.correctAnswer);
+            return Number.isInteger(parsed) && parsed >= 0 && parsed <= 3 ? parsed : 0;
+          })(),
         }));
 
         setQuestions(mapped);
@@ -126,6 +136,31 @@ function CreateQuizPage() {
   e.preventDefault();
   if (!user || !title.trim() || !topic.trim() || questions.length === 0) return;
 
+  const invalidQuestion = questions.find((q) => {
+    const validQuestionText = q.question_text?.trim().length > 0;
+    const validOptions =
+      Array.isArray(q.options) &&
+      q.options.length === 4 &&
+      q.options.every((opt) => opt.trim().length > 0);
+    const validCorrect =
+      Number.isInteger(Number(q.correct_answer)) &&
+      Number(q.correct_answer) >= 0 &&
+      Number(q.correct_answer) <= 3;
+
+    return !validQuestionText || !validOptions || !validCorrect;
+  });
+
+  if (invalidQuestion) {
+    toast({
+      title: "Invalid question data",
+      description: "Each question needs text, exactly 4 filled options, and a valid correct answer.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  const safeTimeLimit = Math.max(1, Number(timeLimit) || 30);
+
   setLoading(true);
 
   try {
@@ -134,7 +169,7 @@ function CreateQuizPage() {
       title,
       topic,
       difficulty,
-      timeLimit
+      safeTimeLimit
     );
 
     const quizId = quizResponse.quiz?.id || quizResponse.quiz?._id;
@@ -146,7 +181,7 @@ function CreateQuizPage() {
     // Step 2: Prepare and add questions
     const questionsToInsert = questions.map((q, index) => ({
       questionText: q.question_text?.trim(),
-      options: q.options.filter(opt => opt.trim() !== ""),
+      options: q.options.map((opt) => opt.trim()),
       correctAnswer: Number(q.correct_answer),
       orderIndex: index,
     }));
@@ -200,11 +235,26 @@ function CreateQuizPage() {
 
           <CardContent className="space-y-3">
             <Textarea
-              placeholder="e.g. Generate 5 multiple choice questions about World War II..."
+              placeholder="e.g. Generate 50 multiple choice questions about World War II..."
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               rows={3}
             />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Number of Questions</Label>
+                <span className="text-sm font-semibold text-primary">{aiQuestionCount}</span>
+              </div>
+              <Slider
+                min={1}
+                max={50}
+                step={1}
+                value={[aiQuestionCount]}
+                onValueChange={(value) => setAiQuestionCount(value[0])}
+                disabled={aiLoading}
+              />
+            </div>
 
             <Button
               onClick={generateWithAI}
@@ -218,7 +268,7 @@ function CreateQuizPage() {
               ) : (
                 <>
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Questions
+                  Generate {aiQuestionCount} Questions
                 </>
               )}
             </Button>
@@ -368,7 +418,18 @@ function CreateQuizPage() {
           <div className="pt-6 border-t border-muted/30">
             <Button
               onClick={handleSubmit}
-              disabled={loading || !title || !topic || questions.some(q => !q.question_text)}
+              disabled={
+                loading ||
+                !title.trim() ||
+                !topic.trim() ||
+                questions.some(
+                  (q) =>
+                    !q.question_text?.trim() ||
+                    !Array.isArray(q.options) ||
+                    q.options.length !== 4 ||
+                    q.options.some((opt) => !opt.trim())
+                )
+              }
               className="w-full h-14 text-lg font-bold rounded-2xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 transition-all active:scale-[0.98]"
             >
               {loading ? (

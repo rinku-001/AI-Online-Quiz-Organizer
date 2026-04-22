@@ -22,8 +22,8 @@ router.post(
       .withMessage('Difficulty must be easy, medium, or hard'),
     body('count')
       .optional({ checkFalsy: true })
-      .isInt({ min: 1, max: 10 })
-      .withMessage('Count must be between 1 and 10'),
+      .isInt({ min: 1, max: 50 })
+      .withMessage('Count must be between 1 and 50'),
   ],
   async (req, res) => {
     try {
@@ -37,7 +37,7 @@ router.post(
 
       const resolvedTopic = topic || prompt;
       const resolvedDifficulty = difficulty || 'medium';
-      const resolvedCount = parseInt(count) || 5;
+      const resolvedCount = parseInt(count) || 50;
 
       // ✅ Same strong prompt
       const finalPrompt = `

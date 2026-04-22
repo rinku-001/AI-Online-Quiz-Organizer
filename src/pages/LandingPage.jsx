@@ -68,7 +68,7 @@ const LandingPage = () => {
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 mb-8 animate-fade-in">
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="text-xs font-bold text-primary uppercase tracking-wider">
-                Powered by Gemini 1.5 Flash
+                Powered by Groq
               </span>
             </div>
 
@@ -126,7 +126,7 @@ const LandingPage = () => {
                 </div>
                 <h3 className="text-xl font-bold mb-3">AI Generation</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Leverage Google Gemini 1.5 to create high-quality multiple choice questions based on any prompt or topic in under 10 seconds.
+                  Leverage Groq Llama 3.1 to create high-quality multiple choice questions based on any prompt or topic in under 10 seconds.
                 </p>
               </div>
 
