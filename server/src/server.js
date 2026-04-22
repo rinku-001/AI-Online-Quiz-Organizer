@@ -12,13 +12,41 @@ import { errorHandler } from './middleware/errorHandler.js';
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+const localOrigins = [
+    /^https?:\/\/localhost:\d+$/,
+    /^https?:\/\/127\.0\.0\.1:\d+$/,
+    /^https?:\/\/192\.168\.56\.1:\d+$/,
+];
+
+const configuredOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.CORS_ORIGINS,
+]
+    .filter(Boolean)
+    .flatMap((value) => value.split(','))
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+const allowedOrigins = [...new Set(configuredOrigins)];
+
 // Middleware
 app.use(cors({
-    origin: [
-        /^https?:\/\/localhost:\d+$/,
-        /^https?:\/\/127\.0\.0\.1:\d+$/,
-        /^https?:\/\/192\.168\.56\.1:\d+$/
-    ],
+    origin: (origin, callback) => {
+        // Allow non-browser clients and same-origin requests with no Origin header.
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        const isLocalAllowed = localOrigins.some((pattern) => pattern.test(origin));
+        const isConfiguredAllowed = allowedOrigins.includes(origin);
+
+        if (isLocalAllowed || isConfiguredAllowed) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
